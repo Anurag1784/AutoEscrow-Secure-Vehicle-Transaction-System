@@ -3,7 +3,6 @@ package com.autoescrow.escrow.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -19,13 +18,28 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
+            // disable csrf (JWT based)
             .csrf(csrf -> csrf.disable())
+
+            // stateless session
             .sessionManagement(session ->
-                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth ->
-                    auth.anyRequest().authenticated()
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+            // authorization rules
+            .authorizeHttpRequests(auth -> auth
+                // escrow APIs must be authenticated
+                .requestMatchers("/escrow/**").authenticated()
+
+                // allow everything else if any
+                .anyRequest().permitAll()
+            )
+
+            // IMPORTANT: JWT filter before username-password filter
+            .addFilterBefore(
+                jwtFilter,
+                UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
     }

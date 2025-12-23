@@ -18,4 +18,7 @@ public interface EscrowService {
     EscrowTransaction buyerConfirm(Long escrowId, String buyerEmail);
 
     EscrowTransaction getEscrowById(Long escrowId);
+
+    // Step 2: Buyer-initiated cancel escrow
+    EscrowTransaction cancelEscrow(Long escrowId, String buyerEmail);
 }

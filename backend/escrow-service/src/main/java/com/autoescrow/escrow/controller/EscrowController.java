@@ -14,7 +14,9 @@ public class EscrowController {
     @Autowired
     private EscrowService escrowService;
 
+    // ==================================================
     // Buyer creates escrow
+    // ==================================================
     @PostMapping("/create")
     public ResponseEntity<?> createEscrow(
             @RequestBody CreateEscrowRequest request,
@@ -32,7 +34,9 @@ public class EscrowController {
         );
     }
 
+    // ==================================================
     // Seller confirms vehicle handover
+    // ==================================================
     @PostMapping("/{id}/seller-confirm")
     public ResponseEntity<?> sellerConfirm(
             @PathVariable Long id,
@@ -43,7 +47,9 @@ public class EscrowController {
         );
     }
 
+    // ==================================================
     // Buyer confirms vehicle received
+    // ==================================================
     @PostMapping("/{id}/buyer-confirm")
     public ResponseEntity<?> buyerConfirm(
             @PathVariable Long id,
@@ -54,7 +60,24 @@ public class EscrowController {
         );
     }
 
+    // ==================================================
+    // STEP 3: Buyer cancels escrow
+    // ==================================================
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelEscrow(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        String buyerEmail = authentication.getName();
+
+        return ResponseEntity.ok(
+                escrowService.cancelEscrow(id, buyerEmail)
+        );
+    }
+
+    // ==================================================
     // Get escrow status
+    // ==================================================
     @GetMapping("/{id}")
     public ResponseEntity<?> getEscrow(@PathVariable Long id) {
         return ResponseEntity.ok(
