@@ -18,7 +18,8 @@ public class AuthService {
     @Autowired
     private UserRepository userRepository;
 
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private BCryptPasswordEncoder passwordEncoder =
+            new BCryptPasswordEncoder();
 
     // ✅ REGISTER
     public void register(RegisterRequest request) {
@@ -30,8 +31,11 @@ public class AuthService {
         User user = new User();
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
         user.setPhone(request.getPhone());
+        user.setRole(request.getRole()); // ✅ ROLE SAVED
         user.setStatus(true);
         user.setCreatedAt(LocalDateTime.now());
 
@@ -42,13 +46,20 @@ public class AuthService {
     public String login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+                .orElseThrow(() ->
+                        new RuntimeException("Invalid email or password"));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(
+                request.getPassword(),
+                user.getPassword()
+        )) {
             throw new RuntimeException("Invalid email or password");
         }
 
-        // ✅ STATIC CALL (CORRECT FOR YOUR JwtUtil)
-        return JwtUtil.generateToken(user.getEmail());
+        // ✅ JWT with EMAIL + ROLE
+        return JwtUtil.generateToken(
+                user.getEmail(),
+                user.getRole()
+        );
     }
 }

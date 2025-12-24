@@ -25,6 +25,10 @@ public class User {
     @Column(name = "phone")
     private String phone;
 
+    // ✅ ROLE FIELD ADDED
+    @Column(nullable = false)
+    private String role;
+
     @Column(name = "is_active")
     private Boolean status;
 
@@ -76,6 +80,15 @@ public class User {
     
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    // ✅ ROLE GETTER / SETTER
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public Boolean getStatus() {

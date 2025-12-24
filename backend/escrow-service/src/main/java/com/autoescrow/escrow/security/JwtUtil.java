@@ -16,17 +16,26 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secret;
 
+    // Extract email (subject)
     public String extractEmail(String token) {
         return extractAllClaims(token).getSubject();
     }
 
+    // Extract role claim
+    public String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
+    }
+
+    // Validate token expiry
     public boolean isTokenValid(String token) {
         Claims claims = extractAllClaims(token);
         return claims.getExpiration().after(new Date());
     }
 
+    // Internal claim parser
     private Claims extractAllClaims(String token) {
         Key key = Keys.hmacShaKeyFor(secret.getBytes());
+
         return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()

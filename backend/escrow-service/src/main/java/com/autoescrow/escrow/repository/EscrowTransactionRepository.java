@@ -17,7 +17,7 @@ public interface EscrowTransactionRepository
             LocalDateTime time
     );
 
-    // Buyer-initiated cancel escrow (FIXED)
+    // Buyer-initiated cancel escrow
     Optional<EscrowTransaction> findByEscrowIdAndBuyerEmail(
             Long escrowId,
             String buyerEmail

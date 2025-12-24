@@ -3,12 +3,15 @@ package com.autoescrow.escrow.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableMethodSecurity   // IMPORTANT for @PreAuthorize
 public class SecurityConfig {
 
     @Autowired
@@ -18,24 +21,27 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-            // disable csrf (JWT based)
+            // Disable CSRF (JWT-based)
             .csrf(csrf -> csrf.disable())
 
-            // stateless session
+            // Stateless session
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
-            // authorization rules
+            // Authorization rules
             .authorizeHttpRequests(auth -> auth
-                // escrow APIs must be authenticated
+                // ADMIN escrow monitoring APIs
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                // Buyer/Seller escrow APIs
                 .requestMatchers("/escrow/**").authenticated()
 
-                // allow everything else if any
+                // Allow everything else
                 .anyRequest().permitAll()
             )
 
-            // IMPORTANT: JWT filter before username-password filter
+            // JWT filter
             .addFilterBefore(
                 jwtFilter,
                 UsernamePasswordAuthenticationFilter.class

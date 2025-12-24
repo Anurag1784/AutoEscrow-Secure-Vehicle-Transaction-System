@@ -7,6 +7,11 @@ public class RegisterRequest {
     private String password;
     private String phone;
 
+    // ✅ ROLE FIELD ADDED
+    private String role;
+
+    // ---------- Getters & Setters ----------
+
     public String getFullName() {
         return fullName;
     }
@@ -33,5 +38,13 @@ public class RegisterRequest {
     }
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    // ✅ ROLE GETTER / SETTER
+    public String getRole() {
+        return role;
+    }
+    public void setRole(String role) {
+        this.role = role;
     }
 }

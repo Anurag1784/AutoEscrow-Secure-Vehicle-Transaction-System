@@ -1,0 +1,12 @@
+[
+  {
+    "ContainingType": "AdminService.Controllers.AdminTestController",
+    "Method": "Test",
+    "RelativePath": "api/admin/test",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]
