@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import com.autoescrow.escrow.entity.EscrowTransaction;
 import com.autoescrow.escrow.repository.EscrowTransactionRepository;
+import com.autoescrow.escrow.state.EscrowStatus;
 
 @Component
 public class EscrowTimeoutScheduler {
@@ -22,12 +23,11 @@ public class EscrowTimeoutScheduler {
     @Scheduled(fixedRate = 60000)
     public void expireEscrows() {
 
-        // 🔍 DEBUG: confirm scheduler is running
         System.out.println(">>> EscrowTimeoutScheduler running at " + LocalDateTime.now());
 
         List<EscrowTransaction> expiredEscrows =
                 repository.findByStatusAndSellerConfirmDeadlineBefore(
-                        "FUNDS_DEPOSITED",
+                        EscrowStatus.FUNDS_DEPOSITED,
                         LocalDateTime.now()
                 );
 
@@ -37,7 +37,7 @@ public class EscrowTimeoutScheduler {
 
             System.out.println(">>> Refunding escrow ID: " + escrow.getEscrowId());
 
-            escrow.setStatus("REFUNDED");
+            escrow.setStatus(EscrowStatus.REFUNDED);
             escrow.setCompletedAt(LocalDateTime.now());
 
             repository.save(escrow);

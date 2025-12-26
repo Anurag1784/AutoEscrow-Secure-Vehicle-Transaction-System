@@ -10,6 +10,7 @@ import com.autoescrow.escrow.audit.AdminAuditLog;
 import com.autoescrow.escrow.audit.AdminAuditLogRepository;
 import com.autoescrow.escrow.entity.EscrowTransaction;
 import com.autoescrow.escrow.service.EscrowService;
+import com.autoescrow.escrow.state.EscrowStatus;
 
 @RestController
 @RequestMapping("/api/admin/escrows")
@@ -31,18 +32,15 @@ public class AdminEscrowController {
     }
 
     // ==================================================
-    // 2️⃣ ADMIN: View escrows by status
+    // 2️⃣ ADMIN: View escrows by status (ENUM FIX)
     // ==================================================
     @GetMapping("/status/{status}")
     public List<EscrowTransaction> getEscrowsByStatus(
-            @PathVariable String status) {
+            @PathVariable EscrowStatus status) {
 
         return escrowService.getAllEscrows()
                 .stream()
-                .filter(e ->
-                        e.getStatus() != null &&
-                        e.getStatus().equalsIgnoreCase(status)
-                )
+                .filter(e -> e.getStatus() == status)
                 .toList();
     }
 

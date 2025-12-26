@@ -3,7 +3,12 @@ package com.autoescrow.escrow.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.autoescrow.escrow.state.EscrowStatus;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,16 +35,11 @@ public class EscrowTransaction {
     private BigDecimal amount;
 
     /**
-     * Escrow status
-     * Possible values:
-     * FUNDS_DEPOSITED
-     * SELLER_CONFIRMED
-     * COMPLETED
-     * CANCELLED
-     * REFUNDED
-     * EXPIRED
+     * Escrow status (STATE MACHINE BASE)
      */
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EscrowStatus status;
 
     /**
      * Manual confirmations

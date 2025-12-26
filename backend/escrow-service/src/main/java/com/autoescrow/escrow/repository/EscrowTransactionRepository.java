@@ -7,17 +7,22 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.autoescrow.escrow.entity.EscrowTransaction;
+import com.autoescrow.escrow.state.EscrowStatus;
 
 public interface EscrowTransactionRepository
         extends JpaRepository<EscrowTransaction, Long> {
 
+    // ===============================
     // Used by auto-refund scheduler
+    // ===============================
     List<EscrowTransaction> findByStatusAndSellerConfirmDeadlineBefore(
-            String status,
+            EscrowStatus status,
             LocalDateTime time
     );
 
+    // ===============================
     // Buyer-initiated cancel escrow
+    // ===============================
     Optional<EscrowTransaction> findByEscrowIdAndBuyerEmail(
             Long escrowId,
             String buyerEmail

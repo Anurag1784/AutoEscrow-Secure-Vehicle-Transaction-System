@@ -7,6 +7,9 @@ import com.autoescrow.escrow.entity.EscrowTransaction;
 
 public interface EscrowService {
 
+    // ===============================
+    // CREATE ESCROW (BUYER)
+    // ===============================
     EscrowTransaction createEscrow(
             String buyerEmail,
             String sellerEmail,
@@ -14,21 +17,38 @@ public interface EscrowService {
             BigDecimal amount
     );
 
+    // ===============================
+    // SELLER CONFIRM
+    // ===============================
     EscrowTransaction sellerConfirm(Long escrowId, String sellerEmail);
 
+    // ===============================
+    // BUYER CONFIRM
+    // ===============================
     EscrowTransaction buyerConfirm(Long escrowId, String buyerEmail);
 
+    // ===============================
+    // GET ESCROW BY ID
+    // ===============================
     EscrowTransaction getEscrowById(Long escrowId);
 
-    // Buyer-initiated cancel escrow
+    // ===============================
+    // BUYER CANCEL ESCROW
+    // ===============================
     EscrowTransaction cancelEscrow(Long escrowId, String buyerEmail);
 
-    // ADMIN: Force cancel escrow
+    // ===============================
+    // ADMIN FORCE CANCEL
+    // ===============================
     EscrowTransaction adminForceCancel(Long escrowId);
 
-    // ADMIN: Force refund escrow
+    // ===============================
+    // ADMIN FORCE REFUND
+    // ===============================
     EscrowTransaction adminForceRefund(Long escrowId);
 
-    // ADMIN: View all escrows
+    // ===============================
+    // ADMIN VIEW ALL ESCROWS
+    // ===============================
     List<EscrowTransaction> getAllEscrows();
 }
