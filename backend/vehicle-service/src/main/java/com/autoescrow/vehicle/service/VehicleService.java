@@ -13,23 +13,17 @@ public class VehicleService {
     @Autowired
     private VehicleRepository repository;
 
-    // ===============================
     // ADD VEHICLE
-    // ===============================
     public Vehicle addVehicle(Vehicle vehicle) {
         return repository.save(vehicle);
     }
 
-    // ===============================
     // GET ALL VEHICLES
-    // ===============================
     public List<Vehicle> getAllVehicles() {
         return repository.findAll();
     }
 
-    // ===============================
     // GET VEHICLE BY ID
-    // ===============================
     public Vehicle getVehicleById(Long id) {
         return repository.findById(id)
                 .orElseThrow(() ->
@@ -37,9 +31,7 @@ public class VehicleService {
                 );
     }
 
-    // ===============================
-    // 🔥 UPDATE VEHICLE STATUS
-    // ===============================
+    // UPDATE VEHICLE STATUS
     public Vehicle updateVehicleStatus(Long vehicleId, String status) {
 
         Vehicle vehicle = repository.findById(vehicleId)
@@ -49,5 +41,16 @@ public class VehicleService {
 
         vehicle.setStatus(status);
         return repository.save(vehicle);
+    }
+
+    // 🔐 OWNERSHIP CHECK (NEW)
+    public boolean isVehicleOwnedBySeller(Long vehicleId, String sellerEmail) {
+
+        Vehicle vehicle = repository.findById(vehicleId)
+                .orElseThrow(() ->
+                        new RuntimeException("Vehicle not found with id: " + vehicleId)
+                );
+
+        return vehicle.getSellerEmail().equalsIgnoreCase(sellerEmail);
     }
 }

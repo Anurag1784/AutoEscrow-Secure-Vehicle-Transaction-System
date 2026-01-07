@@ -4,7 +4,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.autoescrow.escrow.exception.UnauthorizedActionException;
+import com.autoescrow.escrow.exception.UnauthorizedException;
+import com.autoescrow.escrow.exception.ForbiddenException;
 
 public final class ServiceSecurityUtil {
 
@@ -22,7 +23,7 @@ public final class ServiceSecurityUtil {
                 SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new UnauthorizedActionException("Unauthenticated access");
+            throw new UnauthorizedException("Unauthenticated access");
         }
 
         String expectedAuthority = "ROLE_" + requiredRole;
@@ -33,7 +34,7 @@ public final class ServiceSecurityUtil {
                 .anyMatch(expectedAuthority::equals);
 
         if (!hasRole) {
-            throw new UnauthorizedActionException(
+            throw new ForbiddenException(
                     "Access denied. Required role: " + requiredRole
             );
         }
@@ -48,9 +49,31 @@ public final class ServiceSecurityUtil {
                 SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new UnauthorizedActionException("Unauthenticated access");
+            throw new UnauthorizedException("Unauthenticated access");
         }
 
         return authentication.getName();
+    }
+
+    /**
+     * 🔐 Get current JWT token for Feign calls
+     * Returns token in format: "Bearer <token>"
+     */
+    public static String getCurrentToken() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UnauthorizedException("Unauthenticated access");
+        }
+
+        Object credentials = authentication.getCredentials();
+
+        if (credentials == null) {
+            throw new UnauthorizedException("JWT token not found");
+        }
+
+        return "Bearer " + credentials.toString();
     }
 }

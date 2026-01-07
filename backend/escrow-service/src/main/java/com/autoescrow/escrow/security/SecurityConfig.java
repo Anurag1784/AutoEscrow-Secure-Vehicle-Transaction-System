@@ -11,7 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity   // IMPORTANT for @PreAuthorize
+@EnableMethodSecurity   // Enables @PreAuthorize if needed later
 public class SecurityConfig {
 
     @Autowired
@@ -21,23 +21,27 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-            // Disable CSRF (JWT-based)
+            // Disable CSRF (JWT-based auth)
             .csrf(csrf -> csrf.disable())
 
-            // Stateless session
+            // Stateless session (JWT)
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
             // Authorization rules
             .authorizeHttpRequests(auth -> auth
-                // ADMIN escrow monitoring APIs
+
+                // 🔐 ADMIN APIs
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                // Buyer/Seller escrow APIs
+                // 🔐 WALLET APIs (Buyer / Seller)
+                .requestMatchers("/wallet/**").authenticated()
+
+                // 🔐 ESCROW APIs
                 .requestMatchers("/escrow/**").authenticated()
 
-                // Allow everything else
+                // Allow everything else (health, misc)
                 .anyRequest().permitAll()
             )
 

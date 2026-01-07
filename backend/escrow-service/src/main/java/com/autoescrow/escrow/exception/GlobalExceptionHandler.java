@@ -1,101 +1,155 @@
 package com.autoescrow.escrow.exception;
 
-import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.autoescrow.escrow.wallet.exception.InsufficientBalanceException;
+import com.autoescrow.escrow.wallet.exception.WalletException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private Map<String, Object> buildResponse(
-            HttpStatus status,
-            String message,
-            String path) {
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", status.value());
-        body.put("error", status.getReasonPhrase());
-        body.put("message", message);
-        body.put("path", path);
-
-        return body;
-    }
-
-    // ===============================
+    // =========================================
     // 404 – Escrow Not Found
-    // ===============================
+    // =========================================
     @ExceptionHandler(EscrowNotFoundException.class)
-    public ResponseEntity<?> handleEscrowNotFound(
+    public ResponseEntity<ApiErrorResponse> handleEscrowNotFound(
             EscrowNotFoundException ex,
-            jakarta.servlet.http.HttpServletRequest request) {
+            HttpServletRequest request) {
 
-        return new ResponseEntity<>(
-                buildResponse(
-                        HttpStatus.NOT_FOUND,
-                        ex.getMessage(),
-                        request.getRequestURI()
-                ),
-                HttpStatus.NOT_FOUND
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.name(),
+                ex.getMessage(),
+                request.getRequestURI()
         );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(error);
     }
 
-    // ===============================
+    // =========================================
     // 400 – Invalid Escrow State
-    // ===============================
+    // =========================================
     @ExceptionHandler(InvalidEscrowStateException.class)
-    public ResponseEntity<?> handleInvalidState(
+    public ResponseEntity<ApiErrorResponse> handleInvalidState(
             InvalidEscrowStateException ex,
-            jakarta.servlet.http.HttpServletRequest request) {
+            HttpServletRequest request) {
 
-        return new ResponseEntity<>(
-                buildResponse(
-                        HttpStatus.BAD_REQUEST,
-                        ex.getMessage(),
-                        request.getRequestURI()
-                ),
-                HttpStatus.BAD_REQUEST
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.name(),
+                ex.getMessage(),
+                request.getRequestURI()
         );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
     }
 
-    // ===============================
-    // 403 – Unauthorized Action
-    // ===============================
-    @ExceptionHandler(UnauthorizedActionException.class)
-    public ResponseEntity<?> handleUnauthorized(
-            UnauthorizedActionException ex,
-            jakarta.servlet.http.HttpServletRequest request) {
+    // =========================================
+    // 401 – Unauthorized (Not Logged In)
+    // =========================================
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnauthorized(
+            UnauthorizedException ex,
+            HttpServletRequest request) {
 
-        return new ResponseEntity<>(
-                buildResponse(
-                        HttpStatus.FORBIDDEN,
-                        ex.getMessage(),
-                        request.getRequestURI()
-                ),
-                HttpStatus.FORBIDDEN
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                HttpStatus.UNAUTHORIZED.name(),
+                ex.getMessage(),
+                request.getRequestURI()
         );
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(error);
     }
 
-    // ===============================
-    // 500 – Fallback (Unexpected)
-    // ===============================
+    // =========================================
+    // 403 – Forbidden (Wrong Role)
+    // =========================================
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbidden(
+            ForbiddenException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.FORBIDDEN.name(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(error);
+    }
+
+    // =========================================
+    // 400 – Wallet: Insufficient Balance
+    // =========================================
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<ApiErrorResponse> handleInsufficientBalance(
+            InsufficientBalanceException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.name(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    // =========================================
+    // 400 – Wallet: Generic Wallet Exception
+    // =========================================
+    @ExceptionHandler(WalletException.class)
+    public ResponseEntity<ApiErrorResponse> handleWalletException(
+            WalletException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.name(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    // =========================================
+    // 500 – Fallback (Unexpected Errors)
+    // =========================================
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleAll(
+    public ResponseEntity<ApiErrorResponse> handleAll(
             Exception ex,
-            jakarta.servlet.http.HttpServletRequest request) {
+            HttpServletRequest request) {
 
-        return new ResponseEntity<>(
-                buildResponse(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Something went wrong",
-                        request.getRequestURI()
-                ),
-                HttpStatus.INTERNAL_SERVER_ERROR
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                HttpStatus.INTERNAL_SERVER_ERROR.name(),
+                "Internal server error",
+                request.getRequestURI()
         );
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(error);
     }
 }

@@ -15,6 +15,7 @@ import com.autoescrow.escrow.entity.EscrowTransaction;
 import com.autoescrow.escrow.exception.EscrowNotFoundException;
 import com.autoescrow.escrow.exception.InvalidEscrowStateException;
 import com.autoescrow.escrow.exception.UnauthorizedActionException;
+import com.autoescrow.escrow.history.service.EscrowHistoryService;
 import com.autoescrow.escrow.payment.enums.PaymentType;
 import com.autoescrow.escrow.payment.service.PaymentRecordService;
 import com.autoescrow.escrow.repository.EscrowTransactionRepository;
@@ -32,19 +33,22 @@ public class EscrowServiceImpl implements EscrowService {
     private final VehicleClient vehicleClient;
     private final WalletService walletService;
     private final PaymentRecordService paymentRecordService;
+    private final EscrowHistoryService historyService;
 
     public EscrowServiceImpl(
             EscrowTransactionRepository repository,
             AdminAuditService auditService,
             VehicleClient vehicleClient,
             WalletService walletService,
-            PaymentRecordService paymentRecordService) {
+            PaymentRecordService paymentRecordService,
+            EscrowHistoryService historyService) {
 
         this.repository = repository;
         this.auditService = auditService;
         this.vehicleClient = vehicleClient;
         this.walletService = walletService;
         this.paymentRecordService = paymentRecordService;
+        this.historyService = historyService;
     }
 
     // ===============================
@@ -58,7 +62,6 @@ public class EscrowServiceImpl implements EscrowService {
             BigDecimal amount) {
 
         ServiceSecurityUtil.requireRole("BUYER");
-
         validateVehicleForEscrow(vehicleId);
 
         walletService.createWalletIfNotExists(buyerEmail);
@@ -85,7 +88,32 @@ public class EscrowServiceImpl implements EscrowService {
                 PaymentType.PAYMENT_LOCKED
         );
 
+        historyService.recordEvent(
+                saved.getEscrowId(),
+                "ESCROW_CREATED",
+                buyerEmail
+        );
+
         return saved;
+    }
+
+    // ===============================
+    // GET ESCROW BY ID ✅ (FIXED)
+    // ===============================
+    @Override
+    public EscrowTransaction getEscrowById(Long escrowId) {
+
+        EscrowTransaction escrow = repository.findById(escrowId)
+                .orElseThrow(() ->
+                        new EscrowNotFoundException("Escrow not found"));
+
+        historyService.recordEvent(
+                escrowId,
+                "ESCROW_VIEWED",
+                ServiceSecurityUtil.getCurrentUser()
+        );
+
+        return escrow;
     }
 
     // ===============================
@@ -112,11 +140,19 @@ public class EscrowServiceImpl implements EscrowService {
         escrow.setStatus(EscrowStatus.SELLER_CONFIRMED);
         escrow.setUpdatedAt(LocalDateTime.now());
 
-        return repository.save(escrow);
+        EscrowTransaction updated = repository.save(escrow);
+
+        historyService.recordEvent(
+                escrowId,
+                "SELLER_CONFIRMED",
+                sellerEmail
+        );
+
+        return updated;
     }
 
     // ===============================
-    // BUYER CONFIRM  ✅ FINAL BUSINESS STEP
+    // BUYER CONFIRM
     // ===============================
     @Override
     public EscrowTransaction buyerConfirm(Long escrowId, String buyerEmail) {
@@ -134,10 +170,8 @@ public class EscrowServiceImpl implements EscrowService {
             throw new InvalidEscrowStateException("Seller not confirmed yet");
         }
 
-        // ✅ Ensure seller wallet exists
         walletService.createWalletIfNotExists(escrow.getSellerEmail());
 
-        // Release locked funds
         walletService.releaseLockedToSeller(
                 escrow.getBuyerEmail(),
                 escrow.getSellerEmail(),
@@ -148,10 +182,10 @@ public class EscrowServiceImpl implements EscrowService {
         escrow.setStatus(EscrowStatus.COMPLETED);
         escrow.setCompletedAt(LocalDateTime.now());
 
-        // 🔥 NEW STEP: MARK VEHICLE AS SOLD
         vehicleClient.updateVehicleStatus(
                 escrow.getVehicleId(),
-                Map.of("status", "SOLD")
+                Map.of("status", "SOLD"),
+                ServiceSecurityUtil.getCurrentToken()
         );
 
         paymentRecordService.recordPayment(
@@ -162,16 +196,15 @@ public class EscrowServiceImpl implements EscrowService {
                 PaymentType.PAYMENT_RELEASED
         );
 
-        return repository.save(escrow);
-    }
+        EscrowTransaction completed = repository.save(escrow);
 
-    // ===============================
-    // GET ESCROW BY ID
-    // ===============================
-    @Override
-    public EscrowTransaction getEscrowById(Long escrowId) {
-        return repository.findById(escrowId)
-                .orElseThrow(() -> new EscrowNotFoundException("Escrow not found"));
+        historyService.recordEvent(
+                escrowId,
+                "BUYER_CONFIRMED",
+                buyerEmail
+        );
+
+        return completed;
     }
 
     // ===============================
@@ -193,7 +226,15 @@ public class EscrowServiceImpl implements EscrowService {
         escrow.setStatus(EscrowStatus.REFUNDED);
         escrow.setCompletedAt(LocalDateTime.now());
 
-        return repository.save(escrow);
+        EscrowTransaction refunded = repository.save(escrow);
+
+        historyService.recordEvent(
+                escrowId,
+                "BUYER_CANCELLED",
+                buyerEmail
+        );
+
+        return refunded;
     }
 
     // ===============================
@@ -210,6 +251,14 @@ public class EscrowServiceImpl implements EscrowService {
         escrow.setStatus(EscrowStatus.CANCELLED);
         escrow.setUpdatedAt(LocalDateTime.now());
 
+        EscrowTransaction cancelled = repository.save(escrow);
+
+        historyService.recordEvent(
+                escrowId,
+                "ADMIN_FORCE_CANCEL",
+                ServiceSecurityUtil.getCurrentUser()
+        );
+
         auditService.logAction(
                 ServiceSecurityUtil.getCurrentUser(),
                 "FORCE_CANCEL",
@@ -217,7 +266,7 @@ public class EscrowServiceImpl implements EscrowService {
                 "Admin cancelled escrow"
         );
 
-        return repository.save(escrow);
+        return cancelled;
     }
 
     // ===============================
@@ -239,6 +288,14 @@ public class EscrowServiceImpl implements EscrowService {
         escrow.setStatus(EscrowStatus.REFUNDED);
         escrow.setCompletedAt(LocalDateTime.now());
 
+        EscrowTransaction refunded = repository.save(escrow);
+
+        historyService.recordEvent(
+                escrowId,
+                "ADMIN_FORCE_REFUND",
+                ServiceSecurityUtil.getCurrentUser()
+        );
+
         auditService.logAction(
                 ServiceSecurityUtil.getCurrentUser(),
                 "FORCE_REFUND",
@@ -246,7 +303,7 @@ public class EscrowServiceImpl implements EscrowService {
                 "Admin refunded escrow"
         );
 
-        return repository.save(escrow);
+        return refunded;
     }
 
     // ===============================
@@ -263,7 +320,10 @@ public class EscrowServiceImpl implements EscrowService {
     // ===============================
     private void validateVehicleForEscrow(Long vehicleId) {
 
-        VehicleResponse vehicle = vehicleClient.getVehicleById(vehicleId);
+        VehicleResponse vehicle = vehicleClient.getVehicleById(
+                vehicleId,
+                ServiceSecurityUtil.getCurrentToken()
+        );
 
         if (vehicle == null) {
             throw new IllegalStateException("Vehicle not found");

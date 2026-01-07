@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autoescrow.escrow.wallet.entity.Wallet;
+import com.autoescrow.escrow.wallet.enums.WalletTransactionType;
 import com.autoescrow.escrow.wallet.exception.InsufficientBalanceException;
 import com.autoescrow.escrow.wallet.exception.WalletException;
 import com.autoescrow.escrow.wallet.repository.WalletRepository;
@@ -19,6 +20,9 @@ public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
 
+    // 🔥 LEDGER SERVICE (NEW)
+    private final WalletTransactionService walletTransactionService;
+
     // ===============================
     // CREATE WALLET IF NOT EXISTS
     // ===============================
@@ -30,7 +34,7 @@ public class WalletServiceImpl implements WalletService {
             Wallet wallet = new Wallet();
             wallet.setUserEmail(userEmail);
 
-            // 🔥 IMPORTANT INITIALIZATION (BUG FIX)
+            // IMPORTANT INITIALIZATION
             wallet.setAvailableBalance(BigDecimal.ZERO);
             wallet.setLockedBalance(BigDecimal.ZERO);
 
@@ -39,7 +43,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     // ===============================
-    // CREDIT AVAILABLE BALANCE
+    // CREDIT AVAILABLE BALANCE (TOP-UP)
     // ===============================
     @Override
     public void creditAvailable(String userEmail, BigDecimal amount) {
@@ -53,10 +57,20 @@ public class WalletServiceImpl implements WalletService {
         );
 
         walletRepository.save(wallet);
+
+        // 🔥 LEDGER ENTRY
+        walletTransactionService.recordTransaction(
+                userEmail,
+                amount,
+                WalletTransactionType.CREDIT,
+                wallet.getAvailableBalance(),
+                null,
+                "Wallet top-up"
+        );
     }
 
     // ===============================
-    // LOCK FUNDS
+    // LOCK FUNDS FOR ESCROW
     // ===============================
     @Override
     public void lockFunds(String userEmail, BigDecimal amount) {
@@ -80,6 +94,16 @@ public class WalletServiceImpl implements WalletService {
         );
 
         walletRepository.save(wallet);
+
+        // 🔥 LEDGER ENTRY
+        walletTransactionService.recordTransaction(
+                userEmail,
+                amount,
+                WalletTransactionType.LOCK,
+                wallet.getAvailableBalance(),
+                null,
+                "Funds locked for escrow"
+        );
     }
 
     // ===============================
@@ -113,6 +137,26 @@ public class WalletServiceImpl implements WalletService {
 
         walletRepository.save(buyerWallet);
         walletRepository.save(sellerWallet);
+
+        // 🔥 LEDGER ENTRY – BUYER
+        walletTransactionService.recordTransaction(
+                buyerEmail,
+                amount,
+                WalletTransactionType.RELEASE,
+                buyerWallet.getAvailableBalance(),
+                null,
+                "Funds released to seller"
+        );
+
+        // 🔥 LEDGER ENTRY – SELLER
+        walletTransactionService.recordTransaction(
+                sellerEmail,
+                amount,
+                WalletTransactionType.RELEASE,
+                sellerWallet.getAvailableBalance(),
+                null,
+                "Escrow payment received"
+        );
     }
 
     // ===============================
@@ -140,6 +184,16 @@ public class WalletServiceImpl implements WalletService {
         );
 
         walletRepository.save(wallet);
+
+        // 🔥 LEDGER ENTRY
+        walletTransactionService.recordTransaction(
+                buyerEmail,
+                amount,
+                WalletTransactionType.REFUND,
+                wallet.getAvailableBalance(),
+                null,
+                "Escrow refund"
+        );
     }
 
     // ===============================

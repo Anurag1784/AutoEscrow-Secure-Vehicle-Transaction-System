@@ -12,17 +12,21 @@ import com.autoescrow.escrow.state.EscrowStatus;
 public interface EscrowTransactionRepository
         extends JpaRepository<EscrowTransaction, Long> {
 
-    // ===============================
-    // Used by auto-refund scheduler
-    // ===============================
+    // ==========================================================
+    // STEP 1 – Escrow Expiry Scheduler
+    // Finds escrows where:
+    // 1) Status is FUNDS_DEPOSITED
+    // 2) Seller confirmation deadline has passed
+    // ==========================================================
     List<EscrowTransaction> findByStatusAndSellerConfirmDeadlineBefore(
             EscrowStatus status,
-            LocalDateTime time
+            LocalDateTime currentTime
     );
 
-    // ===============================
-    // Buyer-initiated cancel escrow
-    // ===============================
+    // ==========================================================
+    // Buyer-initiated cancel escrow (security-safe)
+    // Ensures buyer can cancel ONLY their own escrow
+    // ==========================================================
     Optional<EscrowTransaction> findByEscrowIdAndBuyerEmail(
             Long escrowId,
             String buyerEmail

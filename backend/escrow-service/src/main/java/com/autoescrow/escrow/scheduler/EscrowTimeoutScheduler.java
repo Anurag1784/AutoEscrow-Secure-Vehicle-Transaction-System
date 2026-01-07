@@ -8,22 +8,25 @@ import org.springframework.stereotype.Component;
 
 import com.autoescrow.escrow.entity.EscrowTransaction;
 import com.autoescrow.escrow.repository.EscrowTransactionRepository;
+import com.autoescrow.escrow.service.EscrowExpiryService;
 import com.autoescrow.escrow.state.EscrowStatus;
 
 @Component
 public class EscrowTimeoutScheduler {
 
     private final EscrowTransactionRepository repository;
+    private final EscrowExpiryService expiryService;
 
-    public EscrowTimeoutScheduler(EscrowTransactionRepository repository) {
+    public EscrowTimeoutScheduler(
+            EscrowTransactionRepository repository,
+            EscrowExpiryService expiryService
+    ) {
         this.repository = repository;
+        this.expiryService = expiryService;
     }
 
-    // Runs every 1 minute
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 60000) // every 1 minute
     public void expireEscrows() {
-
-        System.out.println(">>> EscrowTimeoutScheduler running at " + LocalDateTime.now());
 
         List<EscrowTransaction> expiredEscrows =
                 repository.findByStatusAndSellerConfirmDeadlineBefore(
@@ -31,16 +34,8 @@ public class EscrowTimeoutScheduler {
                         LocalDateTime.now()
                 );
 
-        System.out.println(">>> Expired escrows found: " + expiredEscrows.size());
-
         for (EscrowTransaction escrow : expiredEscrows) {
-
-            System.out.println(">>> Refunding escrow ID: " + escrow.getEscrowId());
-
-            escrow.setStatus(EscrowStatus.REFUNDED);
-            escrow.setCompletedAt(LocalDateTime.now());
-
-            repository.save(escrow);
+            expiryService.expireEscrow(escrow);
         }
     }
 }

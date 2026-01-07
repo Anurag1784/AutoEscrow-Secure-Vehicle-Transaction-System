@@ -26,9 +26,9 @@ public class VehicleController {
     ) {
         String username = authentication.getName();
 
-        // Dummy sellerId (later auth-service se map hoga)
-        vehicle.setSellerId(1L);
-        vehicle.setStatus("ACTIVE");   // safety
+        // TEMP: seller email stored directly
+        vehicle.setSellerEmail(username);
+        vehicle.setStatus("ACTIVE");
 
         return service.addVehicle(vehicle);
     }
@@ -50,7 +50,7 @@ public class VehicleController {
     }
 
     // ===============================
-    // 🔥 UPDATE VEHICLE STATUS (ACTIVE → SOLD)
+    // UPDATE VEHICLE STATUS
     // ===============================
     @PutMapping("/{id}/status")
     public Vehicle updateVehicleStatus(
@@ -59,5 +59,16 @@ public class VehicleController {
     ) {
         String status = body.get("status");
         return service.updateVehicleStatus(id, status);
+    }
+
+    // ===============================
+    // 🔐 CHECK VEHICLE OWNERSHIP (NEW)
+    // ===============================
+    @GetMapping("/{id}/ownership")
+    public Boolean checkOwnership(
+            @PathVariable Long id,
+            @RequestParam String sellerEmail
+    ) {
+        return service.isVehicleOwnedBySeller(id, sellerEmail);
     }
 }

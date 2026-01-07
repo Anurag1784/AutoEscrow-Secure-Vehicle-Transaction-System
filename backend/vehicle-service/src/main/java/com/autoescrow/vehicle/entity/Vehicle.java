@@ -28,13 +28,17 @@ public class Vehicle {
     @Column(nullable = false)
     private double price;
 
-    // Seller userId (Auth service)
-    @Column(name = "seller_id", nullable = false)
+    // 🔐 SELLER EMAIL (USED FOR OWNERSHIP VALIDATION)
+    @Column(name = "seller_email", nullable = false)
+    private String sellerEmail;
+
+    // (Optional – future use, keep it)
+    @Column(name = "seller_id")
     private Long sellerId;
 
-    // 🔥 VERY IMPORTANT (Escrow depends on this)
+    // Vehicle status
     @Column(nullable = false)
-    private String status; // ACTIVE, SOLD, IN_ESCROW
+    private String status; // ACTIVE, SOLD
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -43,7 +47,6 @@ public class Vehicle {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
 
-        // default status
         if (this.status == null) {
             this.status = "ACTIVE";
         }

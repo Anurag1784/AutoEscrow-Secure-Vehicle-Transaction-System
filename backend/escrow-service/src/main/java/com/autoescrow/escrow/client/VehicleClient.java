@@ -2,10 +2,7 @@ package com.autoescrow.escrow.client;
 
 import com.autoescrow.escrow.dto.VehicleResponse;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -17,17 +14,21 @@ import java.util.Map;
 public interface VehicleClient {
 
     // ===============================
-    // GET VEHICLE BY ID
+    // GET VEHICLE BY ID  (JWT REQUIRED)
     // ===============================
     @GetMapping("/api/vehicles/{vehicleId}")
-    VehicleResponse getVehicleById(@PathVariable Long vehicleId);
+    VehicleResponse getVehicleById(
+            @PathVariable Long vehicleId,
+            @RequestHeader("Authorization") String authorization
+    );
 
     // ===============================
-    // 🔥 UPDATE VEHICLE STATUS (ACTIVE → SOLD)
+    // UPDATE VEHICLE STATUS (JWT REQUIRED)
     // ===============================
     @PutMapping("/api/vehicles/{vehicleId}/status")
     void updateVehicleStatus(
             @PathVariable Long vehicleId,
-            @RequestBody Map<String, String> body
+            @RequestBody Map<String, String> body,
+            @RequestHeader("Authorization") String authorization
     );
 }

@@ -9,6 +9,10 @@ public class VehicleResponse {
     private String model;
     private int year;
     private double price;
+
+    // 🔥 REQUIRED (MISSING CAUSED 500)
+    private String sellerEmail;
+
     private Long sellerId;
     private String status;
     private LocalDateTime createdAt;
@@ -27,6 +31,9 @@ public class VehicleResponse {
 
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
+
+    public String getSellerEmail() { return sellerEmail; }
+    public void setSellerEmail(String sellerEmail) { this.sellerEmail = sellerEmail; }
 
     public Long getSellerId() { return sellerId; }
     public void setSellerId(Long sellerId) { this.sellerId = sellerId; }
